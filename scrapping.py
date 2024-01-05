@@ -2,33 +2,40 @@ import csv
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
-url = 'https://best.aliexpress.com/?af=LXKA4UNIg&cn=64566f9248714a3a0f517eea&cv=5&dp=656b3c6d3ea4d80345a25eef&aff_fcid=afeadd876f194f5c92b31a967c375a95-1701526638284-08874-_DEM9iex&tt=CPS_NORMAL&aff_fsk=_DEM9iex&aff_platform=portals-tool&sk=_DEM9iex&aff_trace_key=afeadd876f194f5c92b31a967c375a95-1701526638284-08874-_DEM9iex&terminal_id=01df98161d7c4a7fb1114e2e064cd565'
-driver = webdriver.Chrome()  # Assurez-vous d'avoir ChromeDriver installé et dans votre PATH
+
+# Spécifiez le chemin complet du WebDriver Chrome ici
+#path_to_chromedriver = '/chemin/vers/chromedriver'
+
+url = 'https://www.eyebuydirect.com/'
+driver = webdriver.Chrome() # Assurez-vous d'avoir ChromeDriver installé et dans votre PATH
 driver.get(url)
 
 # Attendre que la page soit entièrement chargée (peut nécessiter des ajustements)
 driver.implicitly_wait(10)
 
 soup = BeautifulSoup(driver.page_source, 'html.parser')
-category_list = soup.find('ul', class_='Categoey--categoryList--2QES_k6')
+product_list = soup.find('div', class_='product-list')
 
-categories = []
+# Parcourir la liste des produits
+products = []
+for product in product_list.find_all('div', class_='product-item'):
+    # Extraire les informations du produit
+    product_name = product.find('a', class_='product-name').text.strip()
+    product_image = product.find('img')['src']
+    product_price = product.find('span', class_='product-price').text
+    product_brand = product.find('span', class_='product-brand').text
 
-if category_list:
-    for item in category_list.find_all('li'):
-        category = item.text.strip()
-        categories.append(category)
+    # Ajouter le produit à la liste
+    products.append({
+        'name': product_name,
+        'image': product_image,
+        'price': product_price,
+        'brand': product_brand,
+    })
 
-    # Enregistrez les catégories dans un fichier CSV
-    with open('categories.csv', 'w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(['Category'])
-        writer.writerows(map(lambda x: [x], categories))
-
-    # Enregistrez les catégories dans un fichier texte
-    with open('categories.txt', 'w', encoding='utf-8') as file:
-        file.write('\n'.join(categories))
-else:
-    print("La classe 'Categoey--categoryList--2QES_k6' n'a pas été trouvée.")
-
-driver.quit()  # Fermez le navigateur après utilisation
+# Enregistrer les données dans un fichier CSV
+with open('products.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['name', 'image', 'price', 'brand'])
+    for product in products:
+        writer.writerow([product['name'], product['image'], product['price'], product['brand']])
